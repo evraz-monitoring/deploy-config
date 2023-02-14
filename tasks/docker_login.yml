@@ -1,0 +1,2 @@
+- name: docker login
+  shell: "echo {{ ci_build_token }} | docker login -u {{ ci_user }} {{ ci_registry }} --password-stdin"

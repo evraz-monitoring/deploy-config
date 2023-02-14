@@ -1,0 +1,22 @@
+code_path: ~/evraz
+compose_file_name: "docker-compose.yml"
+
+# Images
+registry: registry.gitlab.com/evraz-monitoring
+## TimescaleDB
+db_image: timescale/timescaledb
+db_version: latest-pg14
+## Zookeeper
+zookeeper_image: confluentinc/cp-zookeeper
+zookeeper_version: 7.3.1
+## Kafka
+kafka_image: confluentinc/cp-kafka
+kafka_version: 7.3.1
+## Redis
+redis_image: redis
+redis_version: 7.0.8
+## Realtime backend
+realtime_backend_image: "{{ registry }}/realtime-backend"
+realtime_backend_version: latest
+
+include_redis_insight: true

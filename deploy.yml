@@ -1,0 +1,41 @@
+- hosts: "all"
+  gather_facts: no
+  tasks:
+    - include: "tasks/docker_login.yml"
+
+    - name: create target directory
+      file:
+        path: "{{ code_path }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0755
+
+    - name: copy env file
+      copy:
+        src: "./templates/env.j2"
+        dest: "{{ code_path }}/.env"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: 0644
+
+    - name: get absolute dir
+      shell: "cd {{ code_path }} && pwd"
+      register: absolute_dir
+
+    - name: create compose file
+      template:
+        src: "./templates/docker-compose.yml.j2"
+        dest: "{{ code_path }}/{{ compose_file_name }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: pull compose
+      shell: "docker-compose pull"
+      args:
+        chdir: "{{ code_path }}"
+
+    - name: run containers
+      shell: "docker-compose up -d"
+      args:
+        chdir: "{{ code_path }}"

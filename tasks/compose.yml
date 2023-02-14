@@ -1,0 +1,7 @@
+
+- name: create compose file
+  template:
+    src: "./templates/{{ compose_file_name }}.j2"
+    dest: "{{ code_path }}/{{ compose_file_name }}"
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
