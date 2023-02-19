@@ -11,28 +11,10 @@ services:
     ports:
       - ${DB_PORT:-5432}:5432
 
-  zookeeper:
-    image: {{ zookeeper_image }}:{{ zookeeper_version }}
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-    ports:
-      - "2181:2181"
-
-  kafka:
-    image: {{ kafka_image }}:{{ kafka_version }}
-    depends_on: [zookeeper]
-    environment:
-      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_BROKER_ID: 1
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    ports:
-      - "9092:9092"
-
   redis:
     image: {{ redis_image }}:{{ redis_version }}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -44,8 +26,49 @@ services:
     image: {{ realtime_backend_image }}:{{ realtime_backend_version }}
     environment:
       REDIS_HOST: redis
+      WS_HOST: {{ host }}
+      WS_PROTOCOL: "wss"
+      CHECK_DELAY: "0.01"
     ports:
       - "8002:8000"
+
+  historical-backend:
+    image: {{ data_loader_backend_image }}:{{ data_loader_backend_version }}
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SECRET_KEY: {{ django_secret_key }}
+      CSRF_TRUSTED_ORIGINS: "http://localhost http://127.0.0.1 http://0.0.0.0 http://localhost:3000 http://127.0.0.1:3000 http://evraz.rubles.lol https://evraz.rubles.lol"
+      ALLOWED_HOSTS: "localhost 127.0.0.1 localhost:3000 127.0.0.1:3000 evraz.rubles.lol evraz.rubles.lol"
+      DEBUG: "{{ django_debug }}"
+    ports:
+      - "8000:8000"
+
+  kafka-consumer:
+    image: {{ kafka_consumer_image }}:{{ kafka_consumer_version }}
+    command: python manage.py start_data_load
+    environment:
+      DB_HOST: db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_CONSUMER_GROUP: BASED
+      SECRET_KEY: {{ django_secret_key }}
+      CSRF_TRUSTED_ORIGINS: "http://localhost http://127.0.0.1 http://0.0.0.0 http://localhost:3000 http://127.0.0.1:3000 http://evraz.rubles.lol https://evraz.rubles.lol"
+      ALLOWED_HOSTS: "localhost 127.0.0.1 localhost:3000 127.0.0.1:3000 evraz.rubles.lol evraz.rubles.lol"
+      DEBUG: "{{ django_debug }}"
+
+  grafana:
+    image: grafana/grafana-enterprise:8.2.0
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+  frontend:
+    image: {{ frontend_image }}:{{ frontend_version }}
+    ports:
+      - "8003:80"
 
 {% if include_redis_insight %}
   redis-insight:
@@ -58,6 +81,7 @@ services:
 
 volumes:
   db: {}
+  grafana-data: {}
 {% if include_redis_insight %}
   redisinsight: {}
 {% endif %}
