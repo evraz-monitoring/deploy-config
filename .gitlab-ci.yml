@@ -1,0 +1,23 @@
+services:
+  - docker:20.10.16-dind
+
+variables:
+  # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+
+before_script:
+  - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  - chmod 400 "$SSH_PRIVATE_KEY"
+  - ssh-add "$SSH_PRIVATE_KEY"
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+deploy:
+  stage: deploy
+  image: williamyeh/ansible:ubuntu18.04-onbuild
+  script:
+    - ansible-playbook -i hosts -l stage deploy.yml -e ci_registry=$CI_REGISTRY -e ci_build_token=$CI_BUILD_TOKEN -e ci_user=$CI_REGISTRY_USER

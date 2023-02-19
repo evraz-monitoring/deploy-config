@@ -1,5 +1,8 @@
 code_path: ~/evraz
 compose_file_name: "docker-compose.yml"
+host: 127.0.0.1:8002
+django_secret_key: "s+a*y4ymr)-+ftp^j57nh5+$$3(j1=ldho=%7!%q*9aqz02(@4&"
+django_debug: "True"
 
 # Images
 registry: registry.gitlab.com/evraz-monitoring
@@ -18,5 +21,14 @@ redis_version: 7.0.8
 ## Realtime backend
 realtime_backend_image: "{{ registry }}/realtime-backend"
 realtime_backend_version: latest
+## Historical backend
+data_loader_backend_image: "{{ registry }}/data-loader-backend"
+data_loader_backend_version: latest
+## Kafka consumer
+kafka_consumer_image: "{{ data_loader_backend_image }}"
+kafka_consumer_version: latest
+## Frontend
+frontend_image: "{{ registry }}/frontend"
+frontend_version: latest
 
 include_redis_insight: true

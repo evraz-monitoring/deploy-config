@@ -31,11 +31,26 @@
         group: "{{ ansible_user }}"
 
     - name: pull compose
-      shell: "docker-compose pull"
+      shell: "docker compose pull"
       args:
         chdir: "{{ code_path }}"
 
     - name: run containers
-      shell: "docker-compose up -d"
+      shell: "docker compose up -d"
+      args:
+        chdir: "{{ code_path }}"
+
+    - name: run migrate
+      shell: "docker compose exec historical-backend python manage.py migrate"
+      args:
+        chdir: "{{ code_path }}"
+
+    - name: load initial data
+      shell: "docker compose exec historical-backend python manage.py loaddata initial.json"
+      args:
+        chdir: "{{ code_path }}"
+
+    - name: run kafka consumer
+      shell: "docker compose up -d kafka-consumer"
       args:
         chdir: "{{ code_path }}"
